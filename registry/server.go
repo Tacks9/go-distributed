@@ -53,9 +53,10 @@ func (s RegistrationService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		log.Printf("Adding service:%v URL:%s \n", regItem.ServiceName,
+		log.Printf("Adding service:%v with URL:%s \n", regItem.ServiceName,
 			regItem.ServiceURL)
 
+		// 注册服务
 		err = reg.add(regItem)
 		if err != nil {
 			log.Println(err)

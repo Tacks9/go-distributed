@@ -5,24 +5,33 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/Tacks9/go-distributed/registry"
 )
 
 // 服务注册
-func Start(ctx context.Context, serviceName, host, port string,
+func Start(ctx context.Context, host, port string,
+	reg registry.Registration,
 	registerHandlersFunc func()) (context.Context, error) {
 
-	// 运行注册函数
+	// 设置路由和Handler
 	registerHandlersFunc()
 
-	// 启动 service
-	ctx = startService(ctx, serviceName, host, port)
+	// 启动服务
+	ctx = startService(ctx, reg.ServiceName, host, port)
+
+	// 注册服务
+	err := registry.RegistryService(reg)
+	if err != nil {
+		return ctx, err
+	}
 
 	return ctx, nil
 
 }
 
 // 服务启动
-func startService(parent context.Context, serviceName, host, port string) context.Context {
+func startService(parent context.Context, serviceName registry.ServiceName, host, port string) context.Context {
 	// 创建一个具有取消功能的 上下文
 	ctx, cancel := context.WithCancel(parent)
 

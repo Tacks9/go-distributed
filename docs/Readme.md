@@ -19,7 +19,7 @@
           - pkg
             - log
             - service
-  - 注册服务
+  - 注册服务-服务端
     - 启动命令 `cd cmd/registryservice` `go run main.go`
     - 入口文件 [`main.go`](../cmd/registryservice/main.go)
     - 业务逻辑 [`server.go`](../registry/server.go)
@@ -42,3 +42,13 @@
         - 注册服务 `registryservice main.go`
           - pkg
             - registry
+  - 注册服务-客户端
+    - 流程图
+      - cmd
+        - 启动注册服务 `cd cmd/registryservice` `go run main.go` 
+          - 监听 http://localhost:3000/services
+        - 启动日志服务 `cd cmd/logservice` `go run main.go`
+          - 调用 service/service.go 启动日志服务
+          - 监听 http://localhost:4000/log
+          - 设置日志服务 handle 进行日志记录
+          - 向服务中心注册日志服务 调用 http://localhost:3000/services 进行 add
