@@ -17,10 +17,10 @@ func Start(ctx context.Context, host, port string,
 	// 设置路由和Handler
 	registerHandlersFunc()
 
-	// 启动服务
+	// 启动服务：启动HTTP服务返回新的上下文
 	ctx = startService(ctx, reg.ServiceName, host, port)
 
-	// 注册服务
+	// 注册服务：将服务信息注册到注册中心
 	err := registry.RegistryService(reg)
 	if err != nil {
 		return ctx, err
@@ -40,10 +40,15 @@ func startService(parent context.Context, serviceName registry.ServiceName, host
 
 	fmt.Printf("HTTP Server listening on port %s...\n", port)
 
-	// 异常终止
+	// 启动 HTTP 服务
 	go func() {
 		// 启动 HTTP 服务 如果发生错误，则 cancel()
 		log.Println(srv.ListenAndServe())
+		// 如果异常 执行服务移除
+		err := registry.ShutdownService(fmt.Sprintf("http://%s:%s", host, port))
+		if err != nil {
+			log.Println(err)
+		}
 		// 发送信号 取消上下文
 		cancel()
 	}()
@@ -55,8 +60,14 @@ func startService(parent context.Context, serviceName registry.ServiceName, host
 		var s string
 		fmt.Scanln(&s)
 
+		// 如果异常 执行服务移除
+		err := registry.ShutdownService(fmt.Sprintf("http://%s:%s", host, port))
+		if err != nil {
+			log.Println(err)
+		}
 		// 手动停止 发送信号
 		srv.Shutdown(ctx)
+		// 取消上下文
 		cancel()
 	}()
 

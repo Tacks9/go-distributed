@@ -52,3 +52,9 @@
           - 监听 http://localhost:4000/log
           - 设置日志服务 handle 进行日志记录
           - 向服务中心注册日志服务 调用 http://localhost:3000/services 进行 add
+  - 移除服务-客户端
+    - 流程图
+      - 启动注册服务 `cd cmd/registryservice` `go run main.go` 
+      - 注册日志服务 `cd cmd/logservice` `go run main.go`
+      - 关闭日志服务
+      - 触发注册中心移除日志服务
