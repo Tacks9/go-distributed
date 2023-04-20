@@ -58,3 +58,9 @@
       - 注册日志服务 `cd cmd/logservice` `go run main.go`
       - 关闭日志服务
       - 触发注册中心移除日志服务
+  - 学生成绩服务
+    - 流程图
+      - cmd 
+        - 1、启动注册服务  `cd cmd/registryservice` `go run main.go` 
+        - 2、启动日志服务  `cd cmd/logservice` `go run main.go` 
+        - 3、启动学生服务  `cd cmd/gradingservice` `go run main.go` 

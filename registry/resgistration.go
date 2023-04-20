@@ -10,5 +10,6 @@ type Registration struct {
 
 // 服务列表
 const (
-	LogService = ServiceName("LogService")
+	LogService     = ServiceName("LogService")
+	GradingService = ServiceName("GradingService")
 )
