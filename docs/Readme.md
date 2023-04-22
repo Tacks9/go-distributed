@@ -68,3 +68,8 @@
     - 服务之间想要相互依赖的时候可以在 `Registration.RequiredServices` 中
   - 服务的更新
     - 服务依赖变化的时候进行通知 notify
+  - Web 学生服务 `protal`
+    - 增加 学生 HTML 模版，实现 WEB 界面
+    - 依赖
+      - grading
+      - log
