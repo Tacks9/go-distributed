@@ -66,3 +66,5 @@
         - 3、启动学生服务  `cd cmd/gradingservice` `go run main.go` 
   - 服务的发现
     - 服务之间想要相互依赖的时候可以在 `Registration.RequiredServices` 中
+  - 服务的更新
+    - 服务依赖变化的时候进行通知 notify

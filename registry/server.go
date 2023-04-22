@@ -41,6 +41,16 @@ func (r *registry) add(reg Registration) error {
 	if err != nil {
 		return err
 	}
+
+	// 服务出现的时候通知
+	r.notify(patch{
+		Added: []patchEntry{
+			{
+				Name: reg.ServiceName,
+				URL:  reg.ServiceURL,
+			},
+		},
+	})
 	return nil
 }
 
@@ -48,6 +58,15 @@ func (r *registry) add(reg Registration) error {
 func (r *registry) remove(url string) error {
 	for i := range reg.registrations {
 		if reg.registrations[i].ServiceURL == url {
+			// 需要移除的服务通知
+			r.notify(patch{
+				Removed: []patchEntry{
+					{
+						Name: r.registrations[i].ServiceName,
+						URL:  r.registrations[i].ServiceURL,
+					},
+				},
+			})
 			r.mutex.Lock()
 			// 移除当前 item
 			reg.registrations = append(reg.registrations[:i], reg.registrations[i+1:]...)
@@ -60,8 +79,9 @@ func (r *registry) remove(url string) error {
 
 // 在服务中心发现服务
 func (r registry) sendRequiredServices(reg Registration) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	// 读取当前服务注册中心的服务，用读锁即可
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 
 	var p patch
 	for _, serviceReg := range r.registrations {
@@ -97,6 +117,52 @@ func (r registry) sendPatch(p patch, url string) error {
 		return err
 	}
 	return nil
+}
+
+// 通知依赖变更
+func (r registry) notify(fullPatch patch) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	// 注册中心所有服务
+	for _, reg := range r.registrations {
+		// 并发通知
+		go func(reg Registration) {
+			// 每个注册的服务，对其依赖服务项进行处理
+			for _, reqService := range reg.RequiredServices {
+				// 初始化
+				p := patch{Added: []patchEntry{}, Removed: []patchEntry{}}
+				// 是否需要更新
+				sendUpdate := false
+
+				// 添加服务
+				for _, added := range fullPatch.Added {
+					// 如果添加的服务，正好是某个服务的依赖项
+					if added.Name == reqService {
+						p.Added = append(p.Added, added)
+						sendUpdate = true
+					}
+
+				}
+				// 移除服务
+				for _, removed := range fullPatch.Removed {
+					if removed.Name == reqService {
+						p.Removed = append(p.Removed, removed)
+						sendUpdate = true
+					}
+				}
+				if sendUpdate {
+					err := r.sendPatch(p, reg.ServiceUpdateURL)
+					if err != nil {
+						log.Println(err)
+						return
+					}
+				}
+
+			}
+		}(reg)
+
+	}
 }
 
 // 注册服务-服务端

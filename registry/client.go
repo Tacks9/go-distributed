@@ -80,7 +80,8 @@ func (suh serviceUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	fmt.Printf("Update received %v\n", p)
+	// 收到某个服务更新
+	fmt.Printf("Updated received %v\n", p)
 	// 更新服务
 	prov.Update(p)
 }
