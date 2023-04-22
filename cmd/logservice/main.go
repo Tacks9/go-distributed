@@ -17,11 +17,14 @@ func main() {
 
 	// 日志服务的地址
 	host, port := "localhost", "4000"
+	serviceAddress := fmt.Sprintf("http://%s:%s", host, port)
 
 	// 日志服务
 	regItem := registry.Registration{
-		ServiceName: registry.LogService,
-		ServiceURL:  fmt.Sprintf("http://%s:%s", host, port),
+		ServiceName:      registry.LogService,
+		ServiceURL:       serviceAddress,
+		RequiredServices: make([]registry.ServiceName, 0),
+		ServiceUpdateURL: serviceAddress + "/services",
 	}
 	// 启动 Log 服务
 	ctx, err := service.Start(context.Background(),

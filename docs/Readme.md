@@ -64,3 +64,5 @@
         - 1、启动注册服务  `cd cmd/registryservice` `go run main.go` 
         - 2、启动日志服务  `cd cmd/logservice` `go run main.go` 
         - 3、启动学生服务  `cd cmd/gradingservice` `go run main.go` 
+  - 服务的发现
+    - 服务之间想要相互依赖的时候可以在 `Registration.RequiredServices` 中

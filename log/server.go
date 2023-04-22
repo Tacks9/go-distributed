@@ -29,7 +29,7 @@ func (fl fileLog) Write(data []byte) (int, error) {
 // 将日志写入指定的位置，并包含日期和时间
 func Run(destination string) {
 	// 日志记录器
-	logger = stlog.New(fileLog(destination), "[GO] ", stlog.LstdFlags)
+	logger = stlog.New(fileLog(destination), "[GO] - ", stlog.LstdFlags)
 }
 
 // 注册 日志服务

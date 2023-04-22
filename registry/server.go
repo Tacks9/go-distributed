@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -19,8 +20,16 @@ const ServicesURL = "http://localhost" + ServicePort + "/services"
 type registry struct {
 	registrations []Registration
 	// 保证 registrations 并发读写安全
-	mutex *sync.Mutex
+	mutex *sync.RWMutex
 }
+
+// 全局变量 初始化
+var reg = registry{
+	registrations: make([]Registration, 0),
+	mutex:         new(sync.RWMutex),
+}
+
+type RegistrationService struct{}
 
 // 注册一个服务
 func (r *registry) add(reg Registration) error {
@@ -28,6 +37,10 @@ func (r *registry) add(reg Registration) error {
 	r.registrations = append(r.registrations, reg)
 	r.mutex.Unlock()
 
+	err := r.sendRequiredServices(reg)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -45,13 +58,46 @@ func (r *registry) remove(url string) error {
 	return fmt.Errorf("Service at URL %s not found", url)
 }
 
-// 全局变量 初始化
-var reg = registry{
-	registrations: make([]Registration, 0),
-	mutex:         new(sync.Mutex),
+// 在服务中心发现服务
+func (r registry) sendRequiredServices(reg Registration) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	var p patch
+	for _, serviceReg := range r.registrations {
+		// 再遍历依赖的
+		for _, reqService := range reg.RequiredServices {
+			if serviceReg.ServiceName == reqService {
+				// 发现依赖的
+				p.Added = append(p.Added, patchEntry{
+					Name: serviceReg.ServiceName,
+					URL:  serviceReg.ServiceURL,
+				})
+			}
+		}
+
+	}
+
+	// 向服务发送
+	err := r.sendPatch(p, reg.ServiceUpdateURL)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-type RegistrationService struct{}
+// 告知依赖项
+func (r registry) sendPatch(p patch, url string) error {
+	d, err := json.Marshal(p)
+	if err != nil {
+		return nil
+	}
+	_, err = http.Post(url, "application/json", bytes.NewBuffer(d))
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 // 注册服务-服务端
 func (s RegistrationService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
