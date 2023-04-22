@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 // 注册服务-服务端监听端口
@@ -23,13 +24,70 @@ type registry struct {
 	mutex *sync.RWMutex
 }
 
+type RegistrationService struct{}
+
 // 全局变量 初始化
 var reg = registry{
 	registrations: make([]Registration, 0),
 	mutex:         new(sync.RWMutex),
 }
 
-type RegistrationService struct{}
+var once sync.Once
+
+// 启动心跳检测
+func SetupRegistryService() {
+	// 只会在执行一次
+	once.Do(func() {
+		go reg.heartbeat(3 * time.Second)
+	})
+}
+
+// 心跳检查
+func (r *registry) heartbeat(freq time.Duration) {
+	// 循环
+	for {
+		var wg sync.WaitGroup
+		// 遍历所有的注册服务
+		for _, regItem := range r.registrations {
+
+			// 并发请求
+			wg.Add(1)
+			go func(reg Registration) {
+				defer wg.Done()
+				success := true
+				// 请求3次重试
+				for attemps := 0; attemps < 3; attemps++ {
+					res, err := http.Get(reg.HeartbeatURL)
+					if err != nil {
+						log.Println(err)
+					} else if res.StatusCode == http.StatusOK {
+						log.Printf("Heartbeat check passed for %v", reg.ServiceName)
+						// 检测成功
+						if !success {
+							// 进行添加
+							r.add(reg)
+						}
+						break
+					}
+
+					// 检测失败
+					log.Printf("Heartbeat check failed for %v", reg.ServiceName)
+					if success {
+						// 进行移除
+						success = false
+						r.remove(reg.ServiceURL)
+					}
+					time.Sleep(1 * time.Second)
+				}
+			}(regItem)
+			// 等待所有 go routinue
+			wg.Wait()
+
+			// 按照一定频次进行 心跳检测
+			time.Sleep(freq)
+		}
+	}
+}
 
 // 注册一个服务
 func (r *registry) add(reg Registration) error {

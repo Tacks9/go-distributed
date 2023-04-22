@@ -11,6 +11,9 @@ import (
 
 func main() {
 
+	// 启动心跳检测
+	registry.SetupRegistryService()
+
 	// 启动注册服务-服务端
 	http.Handle("/services", &registry.RegistrationService{})
 

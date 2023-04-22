@@ -73,3 +73,5 @@
     - 依赖
       - grading
       - log
+  - 服务的检测
+    - 心跳检查，启动 go routinue 对每一个服务进行 get 请求

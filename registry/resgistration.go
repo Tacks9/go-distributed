@@ -10,6 +10,7 @@ type Registration struct {
 	RequiredServices []ServiceName // 服务所依赖的其他项 (例如grades依赖的log服务)
 	ServiceUpdateURL string        // 接收服务状态信息
 
+	HeartbeatURL string // 心跳检查
 }
 
 // 服务更新 每一条

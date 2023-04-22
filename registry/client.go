@@ -90,6 +90,15 @@ func (suh serviceUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 // 向注册中心注册服务
 func RegistryService(r Registration) error {
+	// 进行服务心跳请求
+	heartbeatURL, err := url.Parse(r.HeartbeatURL)
+	if err != nil {
+		return err
+	}
+	http.HandleFunc(heartbeatURL.Path, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	// 获取 URL
 	ServiceUpdateURL, err := url.Parse(r.ServiceUpdateURL)
 	if err != nil {
